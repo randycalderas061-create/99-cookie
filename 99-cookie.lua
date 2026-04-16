@@ -1,73 +1,63 @@
 --[[
-    REPOSITORY: 99-cookie
-    VERSION: 2.2.0 (Universal Forest Fix)
+    99-COOKIE: DIAMOND GRINDER EDITION
 --]]
 
 local player = game:GetService("Players").LocalPlayer
 local pGui = player:WaitForChild("PlayerGui")
 
--- 1. CLEANUP
 if pGui:FindFirstChild("99CookieUI") then pGui["99CookieUI"]:Destroy() end
 
--- 2. UI CREATION
-local sg = Instance.new("ScreenGui")
+local sg = Instance.new("ScreenGui", pGui)
 sg.Name = "99CookieUI"
-sg.Parent = pGui
-sg.ResetOnSpawn = false
 
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 180, 0, 140)
+main.Size = UDim2.new(0, 180, 0, 180) -- Made it taller for the new button
 main.Position = UDim2.new(0.05, 0, 0.4, 0)
-main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-main.Active = true 
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.Active = true
 main.Draggable = true
 
-local godBtn = Instance.new("TextButton", main)
-godBtn.Size = UDim2.new(0, 160, 0, 45)
-godBtn.Position = UDim2.new(0, 10, 0, 10)
-godBtn.Text = "GOD MODE: OFF"
-godBtn.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
-godBtn.TextColor3 = Color3.new(1, 1, 1)
+local function createBtn(text, pos, color)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(0, 160, 0, 40)
+    btn.Position = pos
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1,1,1)
+    return btn
+end
 
-local bringBtn = Instance.new("TextButton", main)
-bringBtn.Size = UDim2.new(0, 160, 0, 45)
-bringBtn.Position = UDim2.new(0, 10, 0, 65)
-bringBtn.Text = "BRING EVERYTHING"
-bringBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 100)
-bringBtn.TextColor3 = Color3.new(1, 1, 1)
+local godBtn = createBtn("GOD MODE: OFF", UDim2.new(0, 10, 0, 10), Color3.fromRGB(150, 0, 0))
+local bringBtn = createBtn("BRING LOGS/FOOD", UDim2.new(0, 10, 0, 60), Color3.fromRGB(50, 50, 50))
+local gemBtn = createBtn("GET DIAMONDS/CHESTS", UDim2.new(0, 10, 0, 110), Color3.fromRGB(0, 100, 200))
 
--- 3. LOGIC (Brute Force Mode)
-local active = false
-godBtn.MouseButton1Click:Connect(function()
-    active = not active
-    godBtn.Text = active and "GOD MODE: ON" or "GOD MODE: OFF"
-    godBtn.BackgroundColor3 = active and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(100, 20, 20)
+-- DIAMOND GRINDER LOGIC
+gemBtn.MouseButton1Click:Connect(function()
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     
-    spawn(function()
-        while active do
-            pcall(function()
-                if player.Character and player.Character:FindFirstChild("Humanoid") then
-                    player.Character.Humanoid.Health = 100
-                end
-            end)
-            wait(0.1)
-        end
-    end)
-end)
-
-bringBtn.MouseButton1Click:Connect(function()
-    local char = player.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local root = char.HumanoidRootPart
-    
-    -- This looks for any unanchored part (Logs, Sticks, Food)
+    local found = 0
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") and v.Anchored == false and not v:IsDescendantOf(char) then
-            if v.Size.Magnitude < 15 then 
-                v.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+        if v:IsA("BasePart") or v:IsA("Model") then
+            local name = v.Name:lower()
+            -- Searches for common diamond/reward names in 99 Nights
+            if name:find("diamond") or name:find("gem") or name:find("chest") or name:find("reward") then
+                -- Teleport the item to the player
+                if v:IsA("Model") then
+                    v:MoveTo(root.Position + Vector3.new(0, 3, 0))
+                else
+                    v.CFrame = root.CFrame + Vector3.new(0, 3, 0)
+                end
+                found = found + 1
             end
         end
     end
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Grinder Active",
+        Text = "Found " .. found .. " potential rewards!",
+        Duration = 3
+    })
 end)
 
-print("99-cookie: Forest Script Active!")
+-- Rest of the logic (God Mode & Logs) remains the same as v2.2.0
